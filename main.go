@@ -34,7 +34,23 @@ func main() {
 		log.Fatal(err)
 	}
 
-	fmt.Printf("This is the album you've been looking for: %v", album)
+	fmt.Printf("This is the album you've been looking for: %v\n", album)
+
+	// id, err := addAlbum(Album{Title: "Bad", Artist: "Michael Jackson", Price: 999.99})
+
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+
+	// fmt.Printf("New Album ID: %v\n", id)
+
+	allAlbums, err := getAllAlbums()
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Printf("all albums found:\n%v", allAlbums)
 
 }
 
@@ -94,6 +110,7 @@ func getAlbumsByArtist(name string) ([]Album, error) {
 		albums = append(albums, alb)
 	}
 
+	// checks for any errors that may have occured during the loop
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("albumsByArtist %q: %v", name, err)
 	}
@@ -113,4 +130,41 @@ func getAlbumByID(id uint64) (Album, error) {
 	}
 
 	return alb, nil
+}
+
+func addAlbum(alb Album) (int64, error) {
+	result, err := db.Exec("INSERT INTO albums (title, artist, price) VALUES (?, ?, ?)", alb.Title, alb.Artist, alb.Price)
+
+	if err != nil {
+		return 0, fmt.Errorf("addAlbum: %v", err)
+	}
+
+	id, err := result.LastInsertId()
+
+	if err != nil {
+		return 0, fmt.Errorf("addAlbum: %v", err)
+	}
+
+	return id, nil
+}
+
+func getAllAlbums() ([]Album, error) {
+	var albums []Album
+	rows, err := db.Query("SELECT * FROM albums")
+
+	if err != nil {
+		return nil, fmt.Errorf("there was an error fetching the albums: %v", err)
+	}
+
+	for rows.Next() {
+		var alb Album
+
+		if err := rows.Scan(&alb.ID, &alb.Title, &alb.Artist, &alb.Price); err != nil {
+			return nil, fmt.Errorf("error getting albums: %v", err)
+		}
+
+		albums = append(albums, alb)
+	}
+
+	return albums, nil
 }
