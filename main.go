@@ -29,6 +29,13 @@ func main() {
 
 	fmt.Printf("Albums found: %v\n", albums)
 
+	album, err := getAlbumByID(1)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Printf("This is the album you've been looking for: %v", album)
+
 }
 
 func dbConnection() {
@@ -92,4 +99,18 @@ func getAlbumsByArtist(name string) ([]Album, error) {
 	}
 
 	return albums, nil
+}
+
+func getAlbumByID(id uint64) (Album, error) {
+	var alb Album
+
+	row := db.QueryRow("SELECT * FROM albums WHERE id = ?", id)
+
+	if err := row.Scan(&alb.ID, &alb.Title, &alb.Artist, &alb.Price); err != nil {
+		if err == sql.ErrNoRows {
+			return alb, fmt.Errorf("albumsById %d: no such album", id)
+		}
+	}
+
+	return alb, nil
 }
